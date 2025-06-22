@@ -7,6 +7,14 @@
 
 A real-time cryptocurrency analytics dashboard powered by **QuestDB** and **FastAPI**. Stream live market data from Coinbase WebSocket feeds and visualize it with an interactive, responsive dashboard.
 
+## 🎥 Live Demo
+
+https://github.com/marketcalls/Crypto-Realtime-QuestDB/assets/video.mp4
+
+*35-second demo showing real-time data streaming and dashboard interactions*
+
+## 📸 Dashboard Preview
+
 ![Crypto Analytics Dashboard](dashboard.png)
 
 ## ✨ Features
