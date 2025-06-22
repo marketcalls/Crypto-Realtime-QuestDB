@@ -1,0 +1,17 @@
+# Core dependencies
+fastapi
+uvicorn[standard]   
+websockets  
+aiohttp 
+
+# Database
+psycopg2-binary 
+
+# Utilities
+python-dateutil 
+python-dotenv   
+
+# Development dependencies (optional)
+black
+pytest
+pytest-asyncio

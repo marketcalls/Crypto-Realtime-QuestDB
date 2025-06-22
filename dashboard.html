@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Analytics Dashboard - Real-time QuestDB Demo</title>
+    
+    <!-- DaisyUI + Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        .price-up { color: #10b981; }
+        .price-down { color: #ef4444; }
+        .trade-animation {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .pulse-green {
+            animation: pulseGreen 2s infinite;
+        }
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body class="bg-base-200">
+    <!-- Navbar -->
+    <div class="navbar bg-base-100 shadow-lg">
+        <div class="flex-1">
+            <a class="btn btn-ghost text-xl">
+                <i data-feather="activity" class="w-6 h-6 mr-2"></i>
+                Crypto Analytics Dashboard
+            </a>
+        </div>
+        <div class="flex-none">
+            <div class="badge badge-success gap-2 pulse-green" id="connection-status">
+                <div class="w-2 h-2 bg-success rounded-full"></div>
+                Connected
+            </div>
+            <button class="btn btn-ghost btn-circle ml-2">
+                <i data-feather="settings" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat bg-base-100 shadow-xl rounded-box">
+                <div class="stat-figure text-primary">
+                    <i data-feather="trending-up" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Total Volume 24h</div>
+                <div class="stat-value text-primary" id="total-volume">$0</div>
+                <div class="stat-desc">Across all pairs</div>
+            </div>
+            
+            <div class="stat bg-base-100 shadow-xl rounded-box">
+                <div class="stat-figure text-secondary">
+                    <i data-feather="activity" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Trades/Hour</div>
+                <div class="stat-value text-secondary" id="trades-per-hour">0</div>
+                <div class="stat-desc">Real-time executions</div>
+            </div>
+            
+            <div class="stat bg-base-100 shadow-xl rounded-box">
+                <div class="stat-figure text-accent">
+                    <i data-feather="bar-chart-2" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Active Pairs</div>
+                <div class="stat-value text-accent" id="active-pairs">8</div>
+                <div class="stat-desc">Monitoring markets</div>
+            </div>
+            
+            <div class="stat bg-base-100 shadow-xl rounded-box">
+                <div class="stat-figure text-success">
+                    <i data-feather="database" class="w-8 h-8"></i>
+                </div>
+                <div class="stat-title">Data Points</div>
+                <div class="stat-value text-success" id="data-points">0</div>
+                <div class="stat-desc">Stored in QuestDB</div>
+            </div>
+        </div>
+
+        <!-- Price Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="price-cards">
+            <!-- Price cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <!-- Price Chart -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i data-feather="trending-up" class="w-5 h-5 mr-2"></i>
+                        Price Chart
+                    </h2>
+                    <select class="select select-bordered select-sm w-full max-w-xs" id="chart-symbol">
+                        <option value="BTC-USD">BTC-USD</option>
+                        <option value="ETH-USD">ETH-USD</option>
+                        <option value="SOL-USD">SOL-USD</option>
+                    </select>
+                    <canvas id="price-chart" class="mt-4"></canvas>
+                </div>
+            </div>
+
+            <!-- Volume Distribution -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">
+                        <i data-feather="pie-chart" class="w-5 h-5 mr-2"></i>
+                        Volume Distribution
+                    </h2>
+                    <canvas id="volume-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Overview Table -->
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h2 class="card-title mb-4">
+                    <i data-feather="list" class="w-5 h-5 mr-2"></i>
+                    Market Overview
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Price</th>
+                                <th>1h Change</th>
+                                <th>24h Change</th>
+                                <th>24h High/Low</th>
+                                <th>Volume 24h</th>
+                                <th>Trades</th>
+                            </tr>
+                        </thead>
+                        <tbody id="market-table">
+                            <!-- Table rows will be dynamically inserted -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Trades -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title mb-4">
+                    <i data-feather="activity" class="w-5 h-5 mr-2"></i>
+                    Recent Trades
+                    <div class="badge badge-primary badge-sm">LIVE</div>
+                </h2>
+                <div class="max-h-96 overflow-y-auto space-y-2" id="trades-list">
+                    <!-- Trades will be dynamically inserted -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast toast-end">
+        <div class="alert alert-success hidden" id="toast-success">
+            <span></span>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+
+        // WebSocket connection
+        let ws = null;
+        let priceChart = null;
+        let volumeChart = null;
+        let priceData = {};
+        let chartData = { labels: [], datasets: [] };
+
+        // Initialize Charts
+        function initCharts() {
+            // Price Chart
+            const priceCtx = document.getElementById('price-chart').getContext('2d');
+            priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Price',
+                        data: [],
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Volume Chart
+            const volumeCtx = document.getElementById('volume-chart').getContext('2d');
+            volumeChart = new Chart(volumeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)',
+                            'rgb(139, 92, 246)',
+                            'rgb(236, 72, 153)',
+                            'rgb(14, 165, 233)',
+                            'rgb(168, 85, 247)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update price card
+        function updatePriceCard(data) {
+            let card = document.getElementById(`price-${data.symbol}`);
+            
+            if (!card) {
+                // Create new card
+                const cardsContainer = document.getElementById('price-cards');
+                card = document.createElement('div');
+                card.id = `price-${data.symbol}`;
+                card.className = 'card bg-base-100 shadow-xl';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <h3 class="card-title text-lg">${data.symbol}</h3>
+                        <div class="text-3xl font-bold price-value">${data.price.toFixed(2)}</div>
+                        <div class="text-sm opacity-70">
+                            <span class="text-success">Bid: ${data.bid.toFixed(2)}</span>
+                            <span class="text-error ml-2">Ask: ${data.ask.toFixed(2)}</span>
+                        </div>
+                        <div class="text-sm">
+                            Spread: ${data.spread.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+                cardsContainer.appendChild(card);
+            } else {
+                // Update existing card
+                const priceElement = card.querySelector('.price-value');
+                const oldPrice = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+                
+                priceElement.textContent = `$${data.price.toFixed(2)}`;
+                
+                // Add animation
+                if (oldPrice < data.price) {
+                    priceElement.classList.add('price-up');
+                } else if (oldPrice > data.price) {
+                    priceElement.classList.add('price-down');
+                }
+                
+                setTimeout(() => {
+                    priceElement.classList.remove('price-up', 'price-down');
+                }, 1000);
+                
+                // Update bid/ask
+                card.querySelector('.text-success').textContent = `Bid: ${data.bid.toFixed(2)}`;
+                card.querySelector('.text-error').textContent = `Ask: ${data.ask.toFixed(2)}`;
+                card.querySelector('.text-sm:last-child').textContent = `Spread: ${data.spread.toFixed(2)}`;
+            }
+
+            // Store price and volume data
+            priceData[data.symbol] = {
+                price: data.price,
+                volume: data.volume || 0
+            };
+        }
+        
+        // Update volume chart based on current data
+        function updateVolumeChart() {
+            const volumeEntries = Object.entries(priceData)
+                .filter(([symbol, data]) => data.volume > 0)
+                .sort(([, a], [, b]) => b.volume - a.volume)
+                .slice(0, 8);
+            
+            if (volumeEntries.length > 0) {
+                volumeChart.data.labels = volumeEntries.map(([symbol]) => symbol);
+                volumeChart.data.datasets[0].data = volumeEntries.map(([, data]) => data.volume);
+                volumeChart.update('none');
+            }
+        }
+
+        // Add trade to list
+        function addTrade(trade) {
+            const tradesList = document.getElementById('trades-list');
+            const tradeElement = document.createElement('div');
+            const time = new Date(trade.time).toLocaleTimeString();
+            
+            tradeElement.className = `alert ${trade.side === 'buy' ? 'alert-success' : 'alert-error'} trade-animation`;
+            tradeElement.innerHTML = `
+                <div class="flex justify-between w-full">
+                    <span>${time} - ${trade.symbol}</span>
+                    <span class="font-semibold">${trade.side.toUpperCase()} ${trade.size} @ $${trade.price.toFixed(2)}</span>
+                </div>
+            `;
+            
+            tradesList.insertBefore(tradeElement, tradesList.firstChild);
+            
+            // Keep only last 50 trades
+            while (tradesList.children.length > 50) {
+                tradesList.removeChild(tradesList.lastChild);
+            }
+        }
+
+        // Update price chart
+        function updatePriceChart(symbol, price) {
+            if (document.getElementById('chart-symbol').value !== symbol) return;
+            
+            const now = new Date().toLocaleTimeString();
+            
+            if (priceChart.data.labels.length > 50) {
+                priceChart.data.labels.shift();
+                priceChart.data.datasets[0].data.shift();
+            }
+            
+            priceChart.data.labels.push(now);
+            priceChart.data.datasets[0].data.push(price);
+            priceChart.update('none');
+        }
+
+        // Fetch and update market stats
+        async function updateMarketStats() {
+            try {
+                const response = await fetch('/api/market-stats');
+                const stats = await response.json();
+                
+                // Update table
+                const tableBody = document.getElementById('market-table');
+                tableBody.innerHTML = stats.map(s => `
+                    <tr>
+                        <td class="font-semibold">${s.symbol}</td>
+                        <td>${s.current_price.toFixed(2)}</td>
+                        <td class="${s.change_1h >= 0 ? 'text-success' : 'text-error'}">
+                            ${s.change_1h >= 0 ? '+' : ''}${s.change_1h.toFixed(2)}%
+                        </td>
+                        <td class="${s.change_24h >= 0 ? 'text-success' : 'text-error'}">
+                            ${s.change_24h >= 0 ? '+' : ''}${s.change_24h.toFixed(2)}%
+                        </td>
+                        <td>
+                            <span class="text-success">${s.high_24h.toFixed(2)}</span> /
+                            <span class="text-error">${s.low_24h.toFixed(2)}</span>
+                        </td>
+                        <td>${(s.volume_24h / 1000000).toFixed(2)}M</td>
+                        <td>${s.trades_count.toLocaleString()}</td>
+                    </tr>
+                `).join('');
+                
+                // Update volume chart with proper data
+                if (stats.length > 0) {
+                    const volumeData = stats
+                        .filter(s => s.volume_24h > 0)
+                        .sort((a, b) => b.volume_24h - a.volume_24h)
+                        .slice(0, 8); // Top 8 by volume
+                    
+                    volumeChart.data.labels = volumeData.map(s => s.symbol);
+                    volumeChart.data.datasets[0].data = volumeData.map(s => s.volume_24h);
+                    volumeChart.update();
+                }
+                
+                // Update stats
+                const totalVolume = stats.reduce((sum, s) => sum + (s.volume_24h || 0), 0);
+                document.getElementById('total-volume').textContent = 
+                    totalVolume > 0 ? `${(totalVolume / 1000000).toFixed(2)}M` : '$0.00M';
+                
+                const totalTrades = stats.reduce((sum, s) => sum + (s.trades_count || 0), 0);
+                document.getElementById('trades-per-hour').textContent = 
+                    totalTrades > 0 ? Math.round(totalTrades / 24).toLocaleString() : '0';
+                
+            } catch (error) {
+                console.error('Error fetching market stats:', error);
+            }
+        }
+
+        // Connect to WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('connection-status').classList.remove('badge-error');
+                document.getElementById('connection-status').classList.add('badge-success');
+                document.getElementById('connection-status').innerHTML = `
+                    <div class="w-2 h-2 bg-success rounded-full"></div>
+                    Connected
+                `;
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                
+                if (message.type === 'ticker') {
+                    updatePriceCard(message.data);
+                    updatePriceChart(message.data.symbol, message.data.price);
+                    
+                    // Update volume chart with current volumes
+                    updateVolumeChart();
+                } else if (message.type === 'trade') {
+                    addTrade(message.data);
+                } else if (message.type === 'connected') {
+                    // Initialize prices
+                    Object.entries(message.data.prices).forEach(([symbol, price]) => {
+                        updatePriceCard({ symbol, price, bid: price * 0.999, ask: price * 1.001, spread: price * 0.002, volume: 0 });
+                    });
+                }
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                document.getElementById('connection-status').classList.remove('badge-success');
+                document.getElementById('connection-status').classList.add('badge-error');
+                document.getElementById('connection-status').innerHTML = `
+                    <div class="w-2 h-2 bg-error rounded-full"></div>
+                    Disconnected
+                `;
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Chart symbol change handler
+        document.getElementById('chart-symbol').addEventListener('change', (e) => {
+            // Clear chart data
+            priceChart.data.labels = [];
+            priceChart.data.datasets[0].data = [];
+            priceChart.update();
+        });
+
+        // Initialize everything
+        window.addEventListener('load', () => {
+            initCharts();
+            connectWebSocket();
+            updateMarketStats();
+            
+            // Update market stats every 30 seconds
+            setInterval(updateMarketStats, 30000);
+            
+            // Update data points counter
+            setInterval(async () => {
+                try {
+                    const response = await fetch('/api/data-points');
+                    const data = await response.json();
+                    const dataPointsEl = document.getElementById('data-points');
+                    if (dataPointsEl && data.total !== undefined) {
+                        dataPointsEl.textContent = data.total.toLocaleString();
+                    }
+                } catch (error) {
+                    console.error('Error fetching data points:', error);
+                }
+            }, 5000); // Update every 5 seconds
+        });
+    </script>
+</body>
+</html>
