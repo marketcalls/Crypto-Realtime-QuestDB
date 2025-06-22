@@ -391,6 +391,10 @@ CANDLE_GENERATION_INTERVAL = 15  # More frequent candles
 - 🎨 [DaisyUI Components](https://daisyui.com/components/)
 - 📊 [Chart.js Documentation](https://www.chartjs.org/docs/)
 
+### 📝 Tutorial
+
+- 📘 [Building a Real-time Crypto Analytics Dashboard with QuestDB on Windows: A Step-by-Step Guide](https://www.marketcalls.in/python/building-a-real-time-crypto-analytics-dashboard-with-questdb-on-windows-a-step-by-step-guide.html)
+
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
