@@ -69,8 +69,8 @@ A real-time cryptocurrency analytics dashboard powered by **QuestDB** and **Fast
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/marketcalls/crypto-analytics-questdb.git
-   cd crypto-analytics-questdb
+   git clone https://github.com/marketcalls/Crypto-Realtime-QuestDB.git
+   cd Crypto-Realtime-QuestDB
    ```
 
 2. **Set up Python virtual environment**
@@ -268,7 +268,7 @@ CREATE TABLE coinbase_candles (
 ### Project Structure
 
 ```
-crypto-analytics-questdb/
+Crypto-Realtime-QuestDB/
 ├── 📄 main.py              # FastAPI application entry point
 ├── ⚙️ config.py            # Configuration settings
 ├── 🗄️ database.py          # QuestDB client and operations
@@ -380,9 +380,9 @@ CANDLE_GENERATION_INTERVAL = 15  # More frequent candles
 
 ### Community
 
-- **GitHub Issues**: [Report bugs](https://github.com/marketcalls/crypto-analytics-questdb/issues)
-- **Discussions**: [Ask questions](https://github.com/marketcalls/crypto-analytics-questdb/discussions)
-- **Wiki**: [Documentation](https://github.com/marketcalls/crypto-analytics-questdb/wiki)
+- **GitHub Issues**: [Report bugs](https://github.com/marketcalls/Crypto-Realtime-QuestDB/issues)
+- **Discussions**: [Ask questions](https://github.com/marketcalls/Crypto-Realtime-QuestDB/discussions)
+- **Wiki**: [Documentation](https://github.com/marketcalls/Crypto-Realtime-QuestDB/wiki)
 
 ### Resources
 
@@ -413,7 +413,7 @@ Made with ❤️ by [marketcalls](https://github.com/marketcalls)
 
 ### 📊 Stats
 
-![GitHub stars](https://img.shields.io/github/stars/marketcalls/crypto-analytics-questdb?style=social)
-![GitHub forks](https://img.shields.io/github/forks/marketcalls/crypto-analytics-questdb?style=social)
-![GitHub issues](https://img.shields.io/github/issues/marketcalls/crypto-analytics-questdb)
-![GitHub last commit](https://img.shields.io/github/last-commit/marketcalls/crypto-analytics-questdb)
+![GitHub stars](https://img.shields.io/github/stars/marketcalls/Crypto-Realtime-QuestDB?style=social)
+![GitHub forks](https://img.shields.io/github/forks/marketcalls/Crypto-Realtime-QuestDB?style=social)
+![GitHub issues](https://img.shields.io/github/issues/marketcalls/Crypto-Realtime-QuestDB)
+![GitHub last commit](https://img.shields.io/github/last-commit/marketcalls/Crypto-Realtime-QuestDB)
